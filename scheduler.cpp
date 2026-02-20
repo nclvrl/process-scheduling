@@ -48,6 +48,60 @@ struct TestCase {
     }
 };
 
+void calculateMetrics(Process* processes[], int n) {
+    for (int i = 0; i < n; i++) {
+        Process* process = processes[i];
+
+        if (process->startTime == -1) process->startTime = process->completionTime - process->burstTime;
+
+        process->turnaroundTime = process->completionTime - process->arrivalTime;
+        process->waitingTime = process->turnaroundTime - process->burstTime;
+        process->responseTime = process->startTime - process->arrivalTime;
+    }
+}
+
+void printResults(TestCase& testCase, int totalTime) {
+    int n = testCase.processCount;
+    Process** processes = testCase.processList;
+
+    cout << n << " " << testCase.algorithmName << endl;
+
+    int totalBurstTime = 0;
+    for (int i = 0; i < n; i++) totalBurstTime += processes[i]->burstTime;
+
+    double cpuUtilization = (double)totalBurstTime / totalTime * 100;
+    double throughput = (double)n / totalTime;
+
+    cout << "Total time elapsed: " << totalTime << "ns" << endl;
+    cout << "Total CPU burst time: " << totalBurstTime << "ns" << endl;
+    cout << "CPU Utilization: " << (int)cpuUtilization << "%" << endl;
+    cout << "Throughput: " << throughput << " processes/ns" << endl;
+
+    cout << "Waiting times:" << endl;
+    double totalWaiting = 0;
+    for (int i = 0; i < n; i++) {
+        cout << " Process " << processes[i]->index << ": " << processes[i]->waitingTime << "ns" << endl;
+        totalWaiting += processes[i]->waitingTime;
+    }
+    cout << "Average waiting time: " << totalWaiting / n << "ns" << endl;
+
+    cout << "Turnaround times:" << endl;
+    double totalTurnaround = 0;
+    for (int i = 0; i < n; i++) {
+        cout << " Process " << processes[i]->index << ": " << processes[i]->turnaroundTime << "ns" << endl;
+        totalTurnaround += processes[i]->turnaroundTime;
+    }
+    cout << "Average turnaround time: " << totalTurnaround / n << "ns" << endl;
+
+    cout << "Response times:" << endl;
+    double totalResponse = 0;
+    for (int i = 0; i < n; i++) {
+        cout << " Process " << processes[i]->index << ": " << processes[i]->responseTime << "ns" << endl;
+        totalResponse += processes[i]->responseTime;
+    }
+    cout << "Average response time: " << totalResponse / n << "ns" << endl;
+}
+
 void simulateFCFS(int numTest, TestCase& testCase) {
     // TODO: implement FCFS logic
 }
@@ -79,9 +133,7 @@ int main() {
         cin >> processCount >> algorithmName;
 
         int timeQuantum = 0;
-        if (algorithmName == "RR") {
-            cin >> timeQuantum;
-        }
+        if (algorithmName == "RR") cin >> timeQuantum;
 
         TestCase testCase(processCount, algorithmName);
         testCase.timeQuantum = timeQuantum;
