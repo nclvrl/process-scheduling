@@ -139,16 +139,14 @@ void simulateSJF(int numTest, TestCase& testCase) {
             break;
         }
     }
-    int totalTime = processes[0]->arrivalTime;
-    for(int i=0; i < n-1; i++) {
-        if(processes[i]->burstTime + processes[i]->arrivalTime < processes[i+1]->arrivalTime) {
-            totalTime = processes[i+1]->arrivalTime; 
+    int totalTime;
+    for(int i=0; i < n; i++) {
+        if(totalTime < processes[i]->arrivalTime) {
+            totalTime = processes[i]->arrivalTime;
         }
-        else {
-            totalTime += processes[i]->burstTime;
-        }
+        processes[i]->startTime=totalTime;
+        totalTime+= processes[i]->burstTime;
     }
-    totalTime += processes[n-1]->burstTime;
     calculateMetrics(processes, n);
     printResults(testCase, totalTime);
 }
