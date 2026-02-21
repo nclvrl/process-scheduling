@@ -108,6 +108,49 @@ void simulateFCFS(int numTest, TestCase& testCase) {
 
 void simulateSJF(int numTest, TestCase& testCase) {
     // TODO: implement SJF logic
+    int n = testCase.processCount;
+    Process** processes = testCase.processList;
+    bool swapped;
+    for(int i=0; i < n - 1; i++) {
+        swapped = false;
+        for(int j=0; j < n - i - 1; j++) {
+            if(processes[j]->arrivalTime > processes[j+1]->arrivalTime) {
+                Process* tempProcess = processes[j];
+                processes[j] = processes[j+1];
+                processes[j+1] = tempProcess;
+                swapped = true;
+            }
+            else if(processes[j]->arrivalTime == processes[j+1]->arrivalTime) {
+                if(processes[j]->burstTime > processes[j+1]->burstTime) {
+                    Process* tempProcess = processes[j];
+                    processes[j] = processes[j+1];
+                    processes[j+1] = tempProcess;
+                    swapped = true;
+                }
+                else if(processes[j]->index > processes[j+1]->index) {
+                    Process* tempProcess = processes[j];
+                    processes[j] = processes[j+1];
+                    processes[j+1] = tempProcess;
+                    swapped = true;
+                }
+            }
+        }
+        if(!swapped) {
+            break;
+        }
+    }
+    int totalTime = processes[0]->arrivalTime;
+    for(int i=0; i < n-1; i++) {
+        if(processes[i]->burstTime + processes[i]->arrivalTime < processes[i+1]->arrivalTime) {
+            totalTime = processes[i+1]->arrivalTime; 
+        }
+        else {
+            totalTime += processes[i]->burstTime;
+        }
+    }
+    totalTime += processes[n-1]->burstTime;
+    calculateMetrics(processes, n);
+    printResults(testCase, totalTime);
 }
 
 void simulateSRTF(int numTest, TestCase& testCase) {
