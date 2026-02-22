@@ -187,12 +187,47 @@ void simulateSRTF(int numTest, TestCase& testCase) {
             (a->arrivalTime == b->arrivalTime && a->remainingTime < b->remainingTime) || 
             (a->arrivalTime == b->arrivalTime && a->remainingTime == b->remainingTime && a->index < b->index); 
     });
-    int total time = 0;
-    Process* runningProcess = sortedView[0];
-    
 
+    int* arrivalTimes = new int[testCase.processCount];
+    for (int i = 0; i < testCase.processCount; i++) {
+    arrivalTimes[i] = sortedView[i]->arrivalTime;
+    }
 
+    int totalTime = 0;
 
+    priority_queue<Process*> readyQueue;
+    int nextArrivalIndex = 0;
+    int completedProcesses = 0;
+
+    // Run the first process.
+
+    while (completedProcesses < testCase.processCount) {
+
+        while (nextArrivalIndex < testCase.processCount && sortedView[nextArrivalIndex]->arrivalTime <= totalTime) {
+            sortedView[nextArrivalIndex]->remainingTime = sortedView[nextArrivalIndex]->burstTime;
+            readyQueue.push(sortedView[nextArrivalIndex]);
+            nextArrivalIndex++; 
+        }
+        Process* runningProcess = readyQueue.top();
+
+        if (arrivalTimes[nextArrivalIndex] <= (totalTime + runningProcess->remainingTime)){
+            readyQueue.pop(runningProcess);
+            runningProcess->remainingTime -=(arrivalTimes[nextArrivalIndex] - totalTime);
+            totalTime += (arrivalTimes[nextArrivalIndex] - totalTime);
+            readyQueue.push(runningProcess);
+            sortedView[nextArrivalIndex]->remainingTime = sortedView[nextArrivalIndex]->burstTime;
+            readyQueue.push(sortedView[nextArrivalIndex]);
+            sortedView[index]->arrivalTime = arrivalTimes[index];
+            runningProcess = readyQueue.top();
+        }
+        else{
+            totalTime += runningProcess->remainingTime;
+            runningProcess->remainingTime = 0;
+            readyQueue.pop(runningProcess);
+            runningProcess->completionTime = totalTime;
+            completedProcesses++;
+        }
+        runningProcess = readyQueue.top();
 }
 
 void simulatePriority(int numTest, TestCase& testCase) {
