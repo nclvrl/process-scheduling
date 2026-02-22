@@ -1,5 +1,7 @@
 #include <string>
 #include <iostream> 
+#include <algorithm>
+#include <queue>
 using namespace std;
 
 struct Process {
