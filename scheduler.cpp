@@ -108,7 +108,27 @@ void printResults(TestCase& testCase, int totalTime) {
 }
 
 void simulateFCFS(int numTest, TestCase& testCase) {
-    // TODO: implement FCFS logic
+    int n = testCase.processCount;
+    Process** processes = testCase.processList;
+
+    sort(processes, processes + n, [](Process* a, Process* b) {
+        if (a->arrivalTime != b->arrivalTime) return a->arrivalTime < b->arrivalTime;
+        else return a->index < b->index;
+    });
+
+    int currentTime = 0;
+    for (int i = 0; i < n; i++) {
+        Process* process = processes[i];
+        if (currentTime < process->arrivalTime)
+            currentTime = process->arrivalTime;
+        process->startTime = currentTime;
+        process->completionTime = currentTime + process->burstTime;
+        currentTime += process->burstTime;
+    }
+    int totalTime = currentTime;
+
+    calculateMetrics(processes, n);
+    printResults(testCase, totalTime);
 }
 
 void simulateSJF(int numTest, TestCase& testCase) {
