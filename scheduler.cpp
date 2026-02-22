@@ -110,6 +110,7 @@ void simulateSJF(int numTest, TestCase& testCase) {
     // TODO: implement SJF logic
     int n = testCase.processCount;
     Process** processes = testCase.processList;
+    int completedProcesses;
     bool swapped;
     for(int i=0; i < n - 1; i++) {
         swapped = false;
@@ -139,13 +140,40 @@ void simulateSJF(int numTest, TestCase& testCase) {
             break;
         }
     }
+    // TODO:
+    // Assuming processes are sorted by FCFS standards, run first process
+    // after process is done, look at ready queue
+    // compare processes in ready queue with burst times
+    //     pick process with lowest
+
+    
     int totalTime;
+    int minimumBurst = 9999;
+    if(totalTime < processes[0]->arrivalTime) {
+            totalTime = processes[0]->arrivalTime;
+        }
+    processes[0]->startTime=totalTime;
+    while(completedProcesses < n) {
+        for(int i=0; i < n; i++) {
+        if(processes[i]->arrivalTime <= totalTime && processes[i]->burstTime < minimumBurst && processes[i]->remainingTime > 0) {
+            minimumBurst = processes[i]->burstTime;
+        }
+
+    }
+
+    }
+
+
+    // TODO: printouts
+    cout << numTest << " SJF";
     for(int i=0; i < n; i++) {
         if(totalTime < processes[i]->arrivalTime) {
             totalTime = processes[i]->arrivalTime;
         }
         processes[i]->startTime=totalTime;
-        totalTime+= processes[i]->burstTime;
+        cout << totalTime << " " << processes[i]->index << " " << processes[i]->burstTime << "X" << endl;
+        totalTime += processes[i]->burstTime;
+
     }
     calculateMetrics(processes, n);
     printResults(testCase, totalTime);
