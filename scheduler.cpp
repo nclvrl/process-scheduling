@@ -117,10 +117,16 @@ void simulateFCFS(int numTest, TestCase& testCase) {
         if (currentTime < process->arrivalTime)
             currentTime = process->arrivalTime;
         process->startTime = currentTime;
+        cout << currentTime << " " << processes[i]->index << " " << processes[i]->burstTime << "X" << endl;
         process->completionTime = currentTime + process->burstTime;
+
         currentTime += process->burstTime;
     }
     int totalTime = currentTime;
+
+    sort(processes, processes + n, [](Process* a, Process* b) {
+        return a->index < b->index;
+    });
 
     calculateMetrics(processes, n);
     printResults(testCase, totalTime);
@@ -156,6 +162,9 @@ void simulateSJF(int numTest, TestCase& testCase) {
         processes[shortestProcess]->completionTime = totalTime;
         completedProcesses++;
     }
+    sort(processes, processes + n, [](Process* a, Process* b) {
+        return a->index < b->index;
+    });
     calculateMetrics(processes, n);
     printResults(testCase, totalTime);
 }
