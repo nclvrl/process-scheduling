@@ -1,6 +1,5 @@
 #include <string>
 #include <iostream> 
-#include <algorithm>
 using namespace std;
 
 struct Process {
@@ -67,8 +66,6 @@ void printResults(TestCase& testCase, int totalTime) {
 
     cout << n << " " << testCase.algorithmName << endl;
 
-    for (int i = 0; i < n; i++) cout << processes[i]->arrivalTime << " " << processes[i]->index << " " << processes[i]->burstTime << "X" << endl;
-
     int totalBurstTime = 0;
     for (int i = 0; i < n; i++) totalBurstTime += processes[i]->burstTime;
 
@@ -79,8 +76,6 @@ void printResults(TestCase& testCase, int totalTime) {
     cout << "Total CPU burst time: " << totalBurstTime << "ns" << endl;
     cout << "CPU Utilization: " << (int)cpuUtilization << "%" << endl;
     cout << "Throughput: " << throughput << " processes/ns" << endl;
-
-    sort(processes, processes + n, [](Process* a, Process* b){ return a->index < b->index; });
 
     cout << "Waiting times:" << endl;
     double totalWaiting = 0;
@@ -112,7 +107,6 @@ void simulateFCFS(int numTest, TestCase& testCase) {
 }
 
 void simulateSJF(int numTest, TestCase& testCase) {
-    // TODO: implement SJF logic
     int n = testCase.processCount;
     Process** processes = testCase.processList;
     int completedProcesses;
@@ -145,40 +139,27 @@ void simulateSJF(int numTest, TestCase& testCase) {
             break;
         }
     }
-    // TODO:
-    // Assuming processes are sorted by FCFS standards, run first process
-    // after process is done, look at ready queue
-    // compare processes in ready queue with burst times
-    //     pick process with lowest
-
-    
-    int totalTime;
-    int minimumBurst = 9999;
-    if(totalTime < processes[0]->arrivalTime) {
-            totalTime = processes[0]->arrivalTime;
-        }
-    processes[0]->startTime=totalTime;
-    while(completedProcesses < n) {
-        for(int i=0; i < n; i++) {
-        if(processes[i]->arrivalTime <= totalTime && processes[i]->burstTime < minimumBurst && processes[i]->remainingTime > 0) {
-            minimumBurst = processes[i]->burstTime;
-        }
-
-    }
-
-    }
-
-
-    // TODO: printouts
+    int totalTime = 0;
     cout << numTest << " SJF";
-    for(int i=0; i < n; i++) {
-        if(totalTime < processes[i]->arrivalTime) {
-            totalTime = processes[i]->arrivalTime;
+    while(completedProcesses < n) {
+        int minimumBurst = 9999;   
+        int shortestProcess = -1;
+        for(int i=0; i < n; i++) {
+            if(processes[i]->arrivalTime <= totalTime && processes[i]->burstTime < minimumBurst && processes[i]->remainingTime > 0) {
+                minimumBurst = processes[i]->burstTime;
+                shortestProcess = i;
+            }
         }
-        processes[i]->startTime=totalTime;
-        cout << totalTime << " " << processes[i]->index << " " << processes[i]->burstTime << "X" << endl;
-        totalTime += processes[i]->burstTime;
-
+        if(shortestProcess == -1) {
+            totalTime++;
+            continue;
+        }
+        processes[shortestProcess]->startTime=totalTime;
+        cout << totalTime << " " << processes[shortestProcess]->index << " " << processes[shortestProcess]->burstTime << "X" << endl;
+        totalTime += processes[shortestProcess]->burstTime;
+        processes[shortestProcess]->remainingTime = 0;
+        processes[shortestProcess]->completionTime = totalTime;
+        completedProcesses++;
     }
     calculateMetrics(processes, n);
     printResults(testCase, totalTime);
