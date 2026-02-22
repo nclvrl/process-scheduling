@@ -187,7 +187,7 @@ void simulateSRTF(int numTest, TestCase& testCase) {
             (a->arrivalTime == b->arrivalTime && a->remainingTime < b->remainingTime) || 
             (a->arrivalTime == b->arrivalTime && a->remainingTime == b->remainingTime && a->index < b->index); 
     });
-
+    int total time = 0;
     Process* runningProcess = sortedView[0];
     
 
