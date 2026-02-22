@@ -173,7 +173,40 @@ void simulatePriority(int numTest, TestCase& testCase) {
 }
 
 void simulateRR(int numTest, TestCase& testCase) {
-    // TODO: implement Round Robin logic
+    int n = testCase.processCount;
+    Process** processes = testCase.processList;
+    int timeQuantum = testCase.timeQuantum;
+    int completedProcesses;
+    int totalTime;
+    sort(processes, processes + n, [](Process* a, Process* b) {
+        if (a->arrivalTime != b->arrivalTime) return a->arrivalTime < b->arrivalTime;
+        else return a->index < b->index;
+    });
+    cout << numTest << " RR" << endl;
+    while(completedProcesses < n) {
+        for(int i=0; i<n; i++) {
+            if(processes[i]->remainingTime > 0 && processes[i]->arrivalTime <= totalTime) {
+                if(processes[i]->startTime == -1) {
+                    processes[i]->startTime = totalTime;
+                }
+                if(processes[i]->remainingTime > timeQuantum) {
+                    cout << totalTime << " " << processes[i]->index << " " << timeQuantum << endl;
+                    totalTime += timeQuantum;
+                    processes[i]->remainingTime -= timeQuantum;
+                }
+            }
+            else {
+                completedProcesses++;
+                processes[i]->completionTime = totalTime;
+                cout << totalTime << " " << processes[i]->index << " " << processes[i]->remainingTime << "X" << endl;
+                totalTime += processes[i]->remainingTime;
+
+                processes[i]->remainingTime = 0;
+            }
+        }
+    }
+    calculateMetrics(processes, n);
+    printResults(testCase, totalTime);
 }
 
 int main() {
