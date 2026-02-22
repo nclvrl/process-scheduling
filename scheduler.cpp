@@ -130,13 +130,10 @@ void simulateSJF(int numTest, TestCase& testCase) {
     int n = testCase.processCount;
     Process** processes = testCase.processList;
     int completedProcesses;
-    bool swapped;
-
     sort(processes, processes + n, [](Process* a, Process* b) {
         if (a->arrivalTime != b->arrivalTime) return a->arrivalTime < b->arrivalTime;
         else return a->index < b->index;
     });
-
     int totalTime = 0;
     cout << numTest << " SJF" << endl;
     while(completedProcesses < n) {
