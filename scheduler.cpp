@@ -50,6 +50,14 @@ struct TestCase {
     }
 };
 
+struct CompareRemainingTime {
+    bool operator()(Process* a, Process* b) {
+        if (a->remainingTime != b->remainingTime)
+            return a->remainingTime > b->remainingTime;
+        return a->index > b->index;
+    }
+};
+
 void calculateMetrics(Process* processes[], int n) {
     for (int i = 0; i < n; i++) {
         Process* process = processes[i];
