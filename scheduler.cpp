@@ -177,7 +177,22 @@ void simulateSJF(int numTest, TestCase& testCase) {
 }
 
 void simulateSRTF(int numTest, TestCase& testCase) {
-    // TODO: implement SRTF logic
+    Process** sortedView = new Process*[testCase.processCount];
+    for (int i = 0; i < testCase.processCount; i++) {
+        sortedView[i] = testCase.processList[i];
+    }
+
+    sort(sortedView, sortedView + testCase.processCount, [](Process* a, Process* b) 
+    {return  (a->arrivalTime < b->arrivalTime) || 
+            (a->arrivalTime == b->arrivalTime && a->remainingTime < b->remainingTime) || 
+            (a->arrivalTime == b->arrivalTime && a->remainingTime == b->remainingTime && a->index < b->index); 
+    });
+
+    Process* runningProcess = sortedView[0];
+    
+
+
+
 }
 
 void simulatePriority(int numTest, TestCase& testCase) {
