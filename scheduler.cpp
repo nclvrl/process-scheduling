@@ -1,5 +1,6 @@
 #include <string>
 #include <iostream> 
+#include <algorithm>
 using namespace std;
 
 struct Process {
@@ -66,6 +67,8 @@ void printResults(TestCase& testCase, int totalTime) {
 
     cout << n << " " << testCase.algorithmName << endl;
 
+    for (int i = 0; i < n; i++) cout << processes[i]->arrivalTime << " " << processes[i]->index << " " << processes[i]->burstTime << "X" << endl;
+
     int totalBurstTime = 0;
     for (int i = 0; i < n; i++) totalBurstTime += processes[i]->burstTime;
 
@@ -76,6 +79,8 @@ void printResults(TestCase& testCase, int totalTime) {
     cout << "Total CPU burst time: " << totalBurstTime << "ns" << endl;
     cout << "CPU Utilization: " << (int)cpuUtilization << "%" << endl;
     cout << "Throughput: " << throughput << " processes/ns" << endl;
+
+    sort(processes, processes + n, [](Process* a, Process* b){ return a->index < b->index; });
 
     cout << "Waiting times:" << endl;
     double totalWaiting = 0;
