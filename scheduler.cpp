@@ -165,8 +165,83 @@ void simulateSJF(int numTest, TestCase& testCase) {
 }
 
 void simulateSRTF(int numTest, TestCase& testCase) {
-    // TODO: implement SRTF logic
+    Process** sortedView = new Process*[testCase.processCount];
+    for (int i = 0; i < testCase.processCount; i++) {
+        sortedView[i] = testCase.processList[i];
+    }
+
+    sort(sortedView, sortedView + testCase.processCount, [](Process* a, Process* b) 
+    {return  (a->arrivalTime < b->arrivalTime) || 
+            (a->arrivalTime == b->arrivalTime && a->remainingTime < b->remainingTime) || 
+            (a->arrivalTime == b->arrivalTime && a->remainingTime == b->remainingTime && a->index < b->index); 
+    });
+
+    int* arrivalTimes = new int[testCase.processCount];
+    for (int i = 0; i < testCase.processCount; i++) {
+    arrivalTimes[i] = sortedView[i]->arrivalTime;
+    }
+
+    int totalTime = 0;
+
+    priority_queue<Process*, vector<Process*>, CompareRemainingTime> readyQueue;
+    int nextArrivalIndex = 0;
+    int completedProcesses = 0;
+    
+
+    while (completedProcesses < testCase.processCount) {
+        while (nextArrivalIndex < testCase.processCount && sortedView[nextArrivalIndex]->arrivalTime <= totalTime) {
+            sortedView[nextArrivalIndex]->remainingTime = sortedView[nextArrivalIndex]->burstTime;
+            readyQueue.push(sortedView[nextArrivalIndex]);
+            nextArrivalIndex++; 
+        }
+        if (readyQueue.empty()) {
+            if (nextArrivalIndex < testCase.processCount) {
+                totalTime = sortedView[nextArrivalIndex]->arrivalTime;
+                continue; 
+            }
+            break;
+        }
+
+        Process* runningProcess = readyQueue.top();
+        if (runningProcess->remainingTime == runningProcess->burstTime) {
+        runningProcess->responseTime = totalTime - runningProcess->arrivalTime;
+        }
+
+        bool preemption = false;
+        if (nextArrivalIndex < testCase.processCount) {
+            if (arrivalTimes[nextArrivalIndex] < (totalTime + runningProcess->remainingTime)) {
+                preemption = true;
+            }
+        }
+
+        if (preemption) {
+            int timePassed = arrivalTimes[nextArrivalIndex] - totalTime;
+
+            readyQueue.pop();
+            runningProcess->remainingTime -= timePassed;
+            totalTime += timePassed;
+            readyQueue.push(runningProcess);
+        }
+        else{
+            totalTime += runningProcess->remainingTime;
+            readyQueue.pop();
+            runningProcess->remainingTime = 0;
+            runningProcess->completionTime = totalTime;
+            runningProcess->turnaroundTime = runningProcess->completionTime - runningProcess->arrivalTime;
+            runningProcess->waitingTime = runningProcess->turnaroundTime - runningProcess->burstTime;
+            completedProcesses++;
+        }
+    }
+    calculateMetrics(sortedView, testCase.processCount);
+    printResults(testCase, totalTime);
+
+    delete[] sortedView;
+    delete[] arrivalTimes;
+
+    sortedView = nullptr;
+    arrivalTimes = nullptr;
 }
+
 
 void simulatePriority(int numTest, TestCase& testCase) {
     // TODO: implement Priority scheduling logic
