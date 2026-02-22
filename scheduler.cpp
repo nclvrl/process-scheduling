@@ -199,8 +199,6 @@ void simulateSRTF(int numTest, TestCase& testCase) {
     int nextArrivalIndex = 0;
     int completedProcesses = 0;
 
-    // Run the first process.
-
     while (completedProcesses < testCase.processCount) {
 
         while (nextArrivalIndex < testCase.processCount && sortedView[nextArrivalIndex]->arrivalTime <= totalTime) {
@@ -225,9 +223,10 @@ void simulateSRTF(int numTest, TestCase& testCase) {
             runningProcess->remainingTime = 0;
             readyQueue.pop(runningProcess);
             runningProcess->completionTime = totalTime;
+            runningProcess->turnaroundTime = runningProcess->completionTime - runningProcess->arrivalTime;
+            runningProcess->waitingTime = runningProcess->turnaroundTime - runningProcess->burstTime;
             completedProcesses++;
         }
-        runningProcess = readyQueue.top();
 }
 
 void simulatePriority(int numTest, TestCase& testCase) {
