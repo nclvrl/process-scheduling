@@ -136,9 +136,9 @@ void simulateSJF(int numTest, TestCase& testCase) {
         if (a->arrivalTime != b->arrivalTime) return a->arrivalTime < b->arrivalTime;
         else return a->index < b->index;
     });
-    
+
     int totalTime = 0;
-    cout << numTest << " SJF";
+    cout << numTest << " SJF" << endl;
     while(completedProcesses < n) {
         int minimumBurst = 9999;   
         int shortestProcess = -1;
