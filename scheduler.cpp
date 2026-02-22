@@ -242,7 +242,6 @@ void simulateSRTF(int numTest, TestCase& testCase) {
             completedProcesses++;
         }
     }
-    calculateMetrics(sortedView, testCase.processCount);
     printResults(testCase, totalTime);
 
     delete[] sortedView;
