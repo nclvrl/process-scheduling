@@ -185,115 +185,48 @@ void simulateSJF(int numTest, TestCase& testCase) {
 }
 
 void simulateSRTF(int numTest, TestCase& testCase) {
+    // Setup local view
     Process** sortedView = new Process*[testCase.processCount];
     for (int i = 0; i < testCase.processCount; i++) {
         sortedView[i] = testCase.processList[i];
     }
 
-    sort(sortedView, sortedView + testCase.processCount, [](Process* a, Process* b) 
-    {return  (a->arrivalTime < b->arrivalTime) || 
-            (a->arrivalTime == b->arrivalTime && a->remainingTime < b->remainingTime) || 
-            (a->arrivalTime == b->arrivalTime && a->remainingTime == b->remainingTime && a->index < b->index); 
+    // Sort by arrival time, then by index
+    sort(sortedView, sortedView + testCase.processCount, [](Process* a, Process* b) {
+        if (a->arrivalTime != b->arrivalTime) return a->arrivalTime < b->arrivalTime;
+        return a->index < b->index;
     });
 
-    int* arrivalTimes = new int[testCase.processCount];
-    for (int i = 0; i < testCase.processCount; i++) {
-    arrivalTimes[i] = sortedView[i]->arrivalTime;
-    }
-
-    int totalTime = 0;
-
+    // Priority queue to manage ready processes, ordered by shortest remaining time then index
     priority_queue<Process*, vector<Process*>, CompareRemainingTime> readyQueue;
-    int nextArrivalIndex = 0;
-    int completedProcesses = 0;
-    
-
-    while (completedProcesses < testCase.processCount) {
-        while (nextArrivalIndex < testCase.processCount && sortedView[nextArrivalIndex]->arrivalTime <= totalTime) {
-            sortedView[nextArrivalIndex]->remainingTime = sortedView[nextArrivalIndex]->burstTime;
-            readyQueue.push(sortedView[nextArrivalIndex]);
-            nextArrivalIndex++; 
-        }
-        if (readyQueue.empty()) {
-            if (nextArrivalIndex < testCase.processCount) {
-                totalTime += sortedView[nextArrivalIndex]->arrivalTime - totalTime;
-                continue; 
-            }
-            break;
-        }
-
-        Process* runningProcess = readyQueue.top();
-        if (runningProcess->remainingTime == runningProcess->burstTime) {
-        runningProcess->responseTime = totalTime - runningProcess->arrivalTime;
-        }
-
-        bool preemption = false;
-        if (nextArrivalIndex < testCase.processCount) {
-            if (arrivalTimes[nextArrivalIndex] < (totalTime + runningProcess->remainingTime)) {
-                preemption = true;
-            }
-        }
-
-        if (preemption) {
-            int timePassed = arrivalTimes[nextArrivalIndex] - totalTime;
-
-            readyQueue.pop();
-            runningProcess->remainingTime -= timePassed;
-            totalTime += timePassed;
-            readyQueue.push(runningProcess);
-        }
-        else{
-            totalTime += runningProcess->remainingTime;
-            readyQueue.pop();
-            runningProcess->remainingTime = 0;
-            runningProcess->completionTime = totalTime;
-            runningProcess->turnaroundTime = runningProcess->completionTime - runningProcess->arrivalTime;
-            runningProcess->waitingTime = runningProcess->turnaroundTime - runningProcess->burstTime;
-            completedProcesses++;
-        }
-    }
-    printResults(testCase, totalTime);
-
-    delete[] sortedView;
-    delete[] arrivalTimes;
-
-    sortedView = nullptr;
-    arrivalTimes = nullptr;
-}
-
-
-void simulatePriority(int numTest, TestCase& testCase) {
-    Process** sortedView = new Process*[testCase.processCount];
-    for (int i = 0; i < testCase.processCount; i++) {
-        sortedView[i] = testCase.processList[i];
-    }
-
-    sort(sortedView, sortedView + testCase.processCount, [](Process* a, Process* b) 
-    {return  (a->arrivalTime < b->arrivalTime) || 
-            (a->arrivalTime == b->arrivalTime && a->remainingTime < b->remainingTime) || 
-            (a->arrivalTime == b->arrivalTime && a->remainingTime == b->remainingTime && a->index < b->index); 
-    });
-
-    int* arrivalTimes = new int[testCase.processCount];
-    for (int i = 0; i < testCase.processCount; i++) {
-    arrivalTimes[i] = sortedView[i]->arrivalTime;
-    }
-
     int totalTime = 0;
-
-    priority_queue<Process*, vector<Process*>, CompareNiceLevel> readyQueue;
     int nextArrivalIndex = 0;
     int completedProcesses = 0;
-    
 
+    // Tracker variables to stitch continuous bursts interrupted by preemption checks
+    Process* lastRunningProcess = nullptr;
+    int burstStartTime = 0;
+
+    cout << numTest << " SRTF" << endl;
+
+    // Main simulation loop: runs until all processes are completed
     while (completedProcesses < testCase.processCount) {
+
+        // Add newly arrived processes to the ready queue
         while (nextArrivalIndex < testCase.processCount && sortedView[nextArrivalIndex]->arrivalTime <= totalTime) {
-            sortedView[nextArrivalIndex]->remainingTime = sortedView[nextArrivalIndex]->burstTime;
             readyQueue.push(sortedView[nextArrivalIndex]);
-            nextArrivalIndex++; 
+            nextArrivalIndex++;
         }
+
+        // If no processes are ready, jump forward in time to the next arrival
         if (readyQueue.empty()) {
             if (nextArrivalIndex < testCase.processCount) {
+                // If we were running something and CPU becomes idle, print end time of process nbjh.
+                if (lastRunningProcess != nullptr) {
+                    int duration = totalTime - burstStartTime;
+                    cout << burstStartTime << " " << lastRunningProcess->index << " " << duration << endl;
+                    lastRunningProcess = nullptr;
+                }
                 totalTime = sortedView[nextArrivalIndex]->arrivalTime;
                 continue; 
             }
@@ -301,42 +234,171 @@ void simulatePriority(int numTest, TestCase& testCase) {
         }
 
         Process* runningProcess = readyQueue.top();
-        if (runningProcess->remainingTime == runningProcess->burstTime) {
-        runningProcess->responseTime = totalTime - runningProcess->arrivalTime;
-        }
 
-        bool preemption = false;
-        if (nextArrivalIndex < testCase.processCount) {
-            if (sortedView[nextArrivalIndex]->niceLevel < runningProcess->niceLevel) {
-                preemption = true;
+        // Determine if we switched to a different process than last time
+        if (runningProcess != lastRunningProcess) {
+            // If something was running before, print its burst duration
+            if (lastRunningProcess != nullptr) {
+                int duration = totalTime - burstStartTime;
+                cout << burstStartTime << " " << lastRunningProcess->index << " " << duration << endl;
+            }
+            
+            burstStartTime = totalTime;
+            lastRunningProcess = runningProcess;
+
+            // If this is the first time this process is running, set its start time and response time
+            if (runningProcess->startTime == -1) {
+                runningProcess->startTime = totalTime;
+                runningProcess->responseTime = totalTime - runningProcess->arrivalTime;
             }
         }
 
-        if (preemption) {
-            int timePassed = arrivalTimes[nextArrivalIndex] - totalTime;
+        // Calculate time until the next event where either current  process finishes or a new process arrives that could preempt it
+        int timeToFinish = runningProcess->remainingTime;
+        bool arrivalsLeft = (nextArrivalIndex < testCase.processCount);
+        // If there are no more arrivals, just run to completion. Otherwise, check if the next arrival happens before we finish.
+        int timeToNextArrival = arrivalsLeft ? (sortedView[nextArrivalIndex]->arrivalTime - totalTime) : (timeToFinish + 1);
 
-            readyQueue.pop();
-            runningProcess->remainingTime -= timePassed;
-            totalTime += timePassed;
-            readyQueue.push(runningProcess);
-        }
-        else{
-            totalTime += runningProcess->remainingTime;
-            readyQueue.pop();
+        // If the current process finishes before the next arrival, we can run it to completion. Otherwise, run until next arrival and then re-evaluate the queue.
+        if (timeToFinish <= timeToNextArrival) {
+            // Current process finishes
+            int duration = (totalTime + timeToFinish) - burstStartTime;
+            cout << burstStartTime << " " << runningProcess->index << " " << duration << "X" << endl;
+
+            totalTime += timeToFinish;
             runningProcess->remainingTime = 0;
             runningProcess->completionTime = totalTime;
+            
+            // Compute metrics for the completed process
             runningProcess->turnaroundTime = runningProcess->completionTime - runningProcess->arrivalTime;
             runningProcess->waitingTime = runningProcess->turnaroundTime - runningProcess->burstTime;
+            
+            readyQueue.pop();
             completedProcesses++;
+            lastRunningProcess = nullptr; // CPU can now pick someone else
+        } 
+        else {
+            // An arrival happens, pause to check the queue
+            totalTime += timeToNextArrival;
+            runningProcess->remainingTime -= timeToNextArrival;
+            
+            // The next iteration of the while loop will add the new process and potentially preempt according to Priority Scheduling rules
         }
     }
+
     printResults(testCase, totalTime);
 
     delete[] sortedView;
-    delete[] arrivalTimes;
-
     sortedView = nullptr;
-    arrivalTimes = nullptr;
+}
+
+
+void simulatePriority(int numTest, TestCase& testCase) {
+    // Setup local view
+    Process** sortedView = new Process*[testCase.processCount];
+    for (int i = 0; i < testCase.processCount; i++) {
+        sortedView[i] = testCase.processList[i];
+    }
+
+    // Sort by arrival time, then by index
+    sort(sortedView, sortedView + testCase.processCount, [](Process* a, Process* b) {
+        if (a->arrivalTime != b->arrivalTime) return a->arrivalTime < b->arrivalTime;
+        return a->index < b->index;
+    });
+
+    // Priority queue to manage ready processes, ordered by nice level then index
+    priority_queue<Process*, vector<Process*>, CompareNiceLevel> readyQueue;
+    int totalTime = 0;
+    int nextArrivalIndex = 0;
+    int completedProcesses = 0;
+
+    // Tracker variables to stitch continuous bursts interrupted by preemption checks
+    Process* lastRunningProcess = nullptr;
+    int burstStartTime = 0;
+
+    cout << numTest << " SRTF" << endl;
+
+    // Main simulation loop: runs until all processes are completed
+    while (completedProcesses < testCase.processCount) {
+
+        // Add newly arrived processes to the ready queue
+        while (nextArrivalIndex < testCase.processCount && sortedView[nextArrivalIndex]->arrivalTime <= totalTime) {
+            readyQueue.push(sortedView[nextArrivalIndex]);
+            nextArrivalIndex++;
+        }
+
+        // If no processes are ready, jump forward in time to the next arrival
+        if (readyQueue.empty()) {
+            if (nextArrivalIndex < testCase.processCount) {
+                // If we were running something and CPU becomes idle, print end time of process nbjh.
+                if (lastRunningProcess != nullptr) {
+                    int duration = totalTime - burstStartTime;
+                    cout << burstStartTime << " " << lastRunningProcess->index << " " << duration << endl;
+                    lastRunningProcess = nullptr;
+                }
+                totalTime = sortedView[nextArrivalIndex]->arrivalTime;
+                continue; 
+            }
+            break;
+        }
+
+        Process* runningProcess = readyQueue.top();
+
+        // Determine if we switched to a different process than last time
+        if (runningProcess != lastRunningProcess) {
+            // If something was running before, print its burst duration
+            if (lastRunningProcess != nullptr) {
+                int duration = totalTime - burstStartTime;
+                cout << burstStartTime << " " << lastRunningProcess->index << " " << duration << endl;
+            }
+            
+            burstStartTime = totalTime;
+            lastRunningProcess = runningProcess;
+
+            // If this is the first time this process is running, set its start time and response time
+            if (runningProcess->startTime == -1) {
+                runningProcess->startTime = totalTime;
+                runningProcess->responseTime = totalTime - runningProcess->arrivalTime;
+            }
+        }
+
+        // Calculate time until the next event where either current  process finishes or a new process arrives that could preempt it
+        int timeToFinish = runningProcess->remainingTime;
+        bool arrivalsLeft = (nextArrivalIndex < testCase.processCount);
+        // If there are no more arrivals, just run to completion. Otherwise, check if the next arrival happens before we finish.
+        int timeToNextArrival = arrivalsLeft ? (sortedView[nextArrivalIndex]->arrivalTime - totalTime) : (timeToFinish + 1);
+
+        // If the current process finishes before the next arrival, we can run it to completion. Otherwise, run until  next arrival and then re-evaluate the queue.
+        if (timeToFinish <= timeToNextArrival) {
+            // Current process finishes
+            int duration = (totalTime + timeToFinish) - burstStartTime;
+            cout << burstStartTime << " " << runningProcess->index << " " << duration << "X" << endl;
+
+            totalTime += timeToFinish;
+            runningProcess->remainingTime = 0;
+            runningProcess->completionTime = totalTime;
+            
+            // Compute metrics for the completed process
+            runningProcess->turnaroundTime = runningProcess->completionTime - runningProcess->arrivalTime;
+            runningProcess->waitingTime = runningProcess->turnaroundTime - runningProcess->burstTime;
+            
+            readyQueue.pop();
+            completedProcesses++;
+            lastRunningProcess = nullptr; // CPU can now pick someone else
+        } 
+        else {
+            // An arrival happens, pause to check the queue
+            totalTime += timeToNextArrival;
+            runningProcess->remainingTime -= timeToNextArrival;
+            
+            // The next iteration of the while loop will add the new process and potentially preempt according to SRTF rules
+        }
+    }
+
+    printResults(testCase, totalTime);
+
+    delete[] sortedView;
+    sortedView = nullptr;
 }
 
 void simulateRR(int numTest, TestCase& testCase) {
