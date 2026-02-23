@@ -84,7 +84,6 @@ void printResults(TestCase& testCase, int totalTime) {
     int n = testCase.processCount;
     Process** processes = testCase.processList;
 
-    cout << n << " " << testCase.algorithmName << endl;
     sort(processes, processes + n, [](Process* a, Process* b) {
         return a->index < b->index;
     });
@@ -126,6 +125,7 @@ void printResults(TestCase& testCase, int totalTime) {
 }
 
 void simulateFCFS(int numTest, TestCase& testCase) {
+    cout << numTest << " " << testCase.algorithmName << endl;
     int n = testCase.processCount;
     Process** processes = testCase.processList;
 
@@ -159,7 +159,7 @@ void simulateSJF(int numTest, TestCase& testCase) {
         else return a->index < b->index;
     });
     int totalTime = 0;
-    cout << numTest << " SJF" << endl;
+    cout << numTest << " " << testCase.algorithmName << endl;
     while(completedProcesses < n) {
         int minimumBurst = 9999;   
         int shortestProcess = -1;
@@ -185,6 +185,8 @@ void simulateSJF(int numTest, TestCase& testCase) {
 }
 
 void simulateSRTF(int numTest, TestCase& testCase) {
+    cout << numTest << " " << testCase.algorithmName << endl;
+
     // Setup local view
     Process** sortedView = new Process*[testCase.processCount];
     for (int i = 0; i < testCase.processCount; i++) {
@@ -206,8 +208,6 @@ void simulateSRTF(int numTest, TestCase& testCase) {
     // Tracker variables to stitch continuous bursts interrupted by preemption checks
     Process* lastRunningProcess = nullptr;
     int burstStartTime = 0;
-
-    cout << numTest << " SRTF" << endl;
 
     // Main simulation loop: runs until all processes are completed
     while (completedProcesses < testCase.processCount) {
@@ -294,6 +294,7 @@ void simulateSRTF(int numTest, TestCase& testCase) {
 
 
 void simulatePriority(int numTest, TestCase& testCase) {
+    cout << numTest << " " << testCase.algorithmName << endl;
     // Setup local view
     Process** sortedView = new Process*[testCase.processCount];
     for (int i = 0; i < testCase.processCount; i++) {
@@ -315,8 +316,6 @@ void simulatePriority(int numTest, TestCase& testCase) {
     // Tracker variables to stitch continuous bursts interrupted by preemption checks
     Process* lastRunningProcess = nullptr;
     int burstStartTime = 0;
-
-    cout << numTest << " SRTF" << endl;
 
     // Main simulation loop: runs until all processes are completed
     while (completedProcesses < testCase.processCount) {
@@ -411,7 +410,7 @@ void simulateRR(int numTest, TestCase& testCase) {
         if (a->arrivalTime != b->arrivalTime) return a->arrivalTime < b->arrivalTime;
         else return a->index < b->index;
     });
-    cout << numTest << " RR" << endl;
+    cout << numTest << " " << testCase.algorithmName << endl;
     deque<Process*> readyQueue;
     // TODO:
     // add processes to ready queue once they arrive
