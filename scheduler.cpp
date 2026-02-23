@@ -3,6 +3,7 @@
 #include <deque>
 #include <algorithm>
 #include <queue>
+#include <iomanip>
 using namespace std;
 
 struct Process {
@@ -97,17 +98,17 @@ void printResults(TestCase& testCase, int totalTime) {
     cout << "Total time elapsed: " << totalTime << "ns" << endl;
     cout << "Total CPU burst time: " << totalBurstTime << "ns" << endl;
     cout << "CPU Utilization: " << (int)cpuUtilization << "%" << endl;
-    cout << "Throughput: " << throughput << " processes/ns" << endl;
+    cout << "Throughput: " << setprecision(16) << throughput << " processes/ns" << endl;
 
-    cout << "Waiting times:" << endl;
+    cout << setprecision(2) << "Waiting times:" << endl;
     double totalWaiting = 0;
     for (int i = 0; i < n; i++) {
         cout << " Process " << processes[i]->index << ": " << processes[i]->waitingTime << "ns" << endl;
         totalWaiting += processes[i]->waitingTime;
     }
-    cout << "Average waiting time: " << totalWaiting / n << "ns" << endl;
+    cout << defaultfloat << "Average waiting time: " << setprecision(16) << totalWaiting / n << "ns" << endl;
 
-    cout << "Turnaround times:" << endl;
+    cout <<  setprecision(4) << "Turnaround times:" << endl;
     double totalTurnaround = 0;
     for (int i = 0; i < n; i++) {
         cout << " Process " << processes[i]->index << ": " << processes[i]->turnaroundTime << "ns" << endl;
