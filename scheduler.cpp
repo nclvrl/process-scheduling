@@ -1,5 +1,6 @@
 #include <string>
 #include <iostream> 
+#include <deque>
 #include <algorithm>
 #include <queue>
 using namespace std;
@@ -15,6 +16,7 @@ struct Process {
     int waitingTime = 0;
     int turnaroundTime = 0;
     int responseTime = 0;
+    bool queueStatus = false;
 
     Process(int index, int arrivalTime, int burstTime, int niceLevel) {
         this->index = index;
@@ -338,7 +340,62 @@ void simulatePriority(int numTest, TestCase& testCase) {
 }
 
 void simulateRR(int numTest, TestCase& testCase) {
-    // TODO: implement Round Robin logic
+    int n = testCase.processCount;
+    Process** processes = testCase.processList;
+    int timeQuantum = testCase.timeQuantum;
+    int completedProcesses = 0;
+    int totalTime = 0;
+    sort(processes, processes + n, [](Process* a, Process* b) {
+        if (a->arrivalTime != b->arrivalTime) return a->arrivalTime < b->arrivalTime;
+        else return a->index < b->index;
+    });
+    cout << numTest << " RR" << endl;
+    deque<Process*> readyQueue;
+    // TODO:
+    // add processes to ready queue once they arrive
+     while(completedProcesses < n) {
+        for(int i=0; i < n; i++) {
+            if(processes[i]->queueStatus == false && processes[i]->remainingTime > 0 && processes[i]-> arrivalTime <= totalTime) {
+                if(processes[i]->startTime == -1) {
+                    processes[i]->startTime = totalTime;
+                }
+                readyQueue.push_back(processes[i]);
+                processes[i]->queueStatus = true;
+            }
+        }
+        if(readyQueue.empty()) {
+            totalTime++;
+            continue;
+        }
+        Process* currentProcess = readyQueue.front();
+        readyQueue.pop_front();
+        if(currentProcess->remainingTime > timeQuantum) {
+            cout << totalTime << " " << currentProcess->index << " " << timeQuantum << endl;
+            totalTime += timeQuantum;
+            currentProcess->remainingTime -= timeQuantum;
+        }
+        else if(currentProcess->remainingTime <= timeQuantum) {
+            cout << totalTime << " " << currentProcess->index << " " << currentProcess->remainingTime << "X" << endl;
+            totalTime += currentProcess->remainingTime;
+            currentProcess->completionTime = totalTime;
+            currentProcess->remainingTime = 0;
+            completedProcesses++;
+        }
+        for(int i=0; i < n; i++) {
+            if(processes[i]->queueStatus == false && processes[i]->remainingTime > 0 && processes[i]-> arrivalTime <= totalTime) {
+                if(processes[i]->startTime == -1) {
+                    processes[i]->startTime = totalTime;
+                }
+                readyQueue.push_front(processes[i]);
+                processes[i]->queueStatus = true;
+            }
+        }
+        if(currentProcess->remainingTime > 0) {
+            readyQueue.push_back(currentProcess);
+        }
+     }
+    calculateMetrics(processes, n);
+    printResults(testCase, totalTime);
 }
 
 int main() {
