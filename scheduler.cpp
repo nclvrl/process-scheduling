@@ -57,6 +57,8 @@ struct CompareRemainingTime {
     bool operator()(Process* a, Process* b) {
         if (a->remainingTime != b->remainingTime)
             return a->remainingTime > b->remainingTime;
+        if (a->arrivalTime != b->arrivalTime)
+            return a->arrivalTime > b->arrivalTime;
         return a->index > b->index;
     }
 };
@@ -65,6 +67,8 @@ struct CompareNiceLevel {
     bool operator()(Process* a, Process* b) {
         if (a->niceLevel != b->niceLevel)
             return a->niceLevel > b->niceLevel;
+        if (a->arrivalTime != b->arrivalTime)
+            return a->arrivalTime > b->arrivalTime;
         return a->index > b->index;
     }
 };
