@@ -214,7 +214,7 @@ void simulateSRTF(int numTest, TestCase& testCase) {
         }
         if (readyQueue.empty()) {
             if (nextArrivalIndex < testCase.processCount) {
-                totalTime = sortedView[nextArrivalIndex]->arrivalTime;
+                totalTime += sortedView[nextArrivalIndex]->arrivalTime - totalTime;
                 continue; 
             }
             break;
