@@ -72,6 +72,13 @@ struct CompareNiceLevel {
         return a->index > b->index;
     }
 };
+struct CompareArrivalTime {
+    bool operator()(Process* a, Process* b) {
+        if (a->arrivalTime != b->arrivalTime)
+            return a->arrivalTime > b->arrivalTime;
+        return a->index > b->index;
+    }
+};
 
 void calculateMetrics(Process* processes[], int n) {
     for (int i = 0; i < n; i++) {
@@ -411,6 +418,8 @@ void simulateRR(int numTest, TestCase& testCase) {
     int timeQuantum = testCase.timeQuantum;
     int completedProcesses = 0;
     int totalTime = 0;
+    Process* currentProcess;
+    priority_queue<Process*, vector<Process*>, CompareArrivalTime> arrivalQueue;
     sort(processes, processes + n, [](Process* a, Process* b) {
         if (a->arrivalTime != b->arrivalTime) return a->arrivalTime < b->arrivalTime;
         else return a->index < b->index;
@@ -433,8 +442,15 @@ void simulateRR(int numTest, TestCase& testCase) {
             totalTime++;
             continue;
         }
-        Process* currentProcess = readyQueue.front();
-        readyQueue.pop_front();
+        if(arrivalQueue.empty()) {
+            currentProcess = readyQueue.front();
+            readyQueue.pop_front();
+        }
+        else {
+            currentProcess = arrivalQueue.top();
+            arrivalQueue.pop();
+        }
+
         if(currentProcess->remainingTime > timeQuantum) {
             cout << totalTime << " " << currentProcess->index << " " << timeQuantum << endl;
             totalTime += timeQuantum;
@@ -447,13 +463,14 @@ void simulateRR(int numTest, TestCase& testCase) {
             currentProcess->remainingTime = 0;
             completedProcesses++;
         }
+
         for(int i=0; i < n; i++) {
             if(processes[i]->queueStatus == false && processes[i]->remainingTime > 0 && processes[i]-> arrivalTime <= totalTime) {
                 if(processes[i]->startTime == -1) {
                     processes[i]->startTime = totalTime;
                 }
-                readyQueue.push_front(processes[i]);
                 processes[i]->queueStatus = true;
+                arrivalQueue.push(processes[i]);
             }
         }
         if(currentProcess->remainingTime > 0) {
